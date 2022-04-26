@@ -32,6 +32,19 @@ const legend = d3.legendColor()
   .shapePadding(10)
   .scale(colour)
 
+const tip = d3.tip()
+  .attr('class', 'tip')
+  .html(d => {
+    let content = 
+      `<div class="name">${d.data.name}</div>`
+      content += `<div class="cost">${d.data.cost}</div>`
+      content += `<div class="delete">Click the slice to delete</div>`
+    
+    return content
+  })
+
+  graph.call(tip)
+
 // update function
 const update = (data) => {
 
@@ -68,6 +81,17 @@ const update = (data) => {
       .transition().duration(750)
         .attrTween("d", arcTweenEnter)
 
+  // add events
+  graph.selectAll('path')
+    .on('mouseover', (d,i,n) => {
+      tip.show(d, n[i])
+      handleMouseOver(d,i,n)
+    })
+    .on('mouseout', (d,i,n) => {
+      tip.hide();
+      handleMouseOut(d,i,n)
+    })
+    .on('click', hanldeClick)
 };
 
 // data array and firestore
@@ -140,4 +164,23 @@ function arcUpdateTween(d) {
   return function(t) {
     return arcPath(i(t))
   }
+}
+
+// d is data, i is the index of the element, n is the array of elements in that selection
+const handleMouseOver = (d, i, n) => {
+  d3.select(n[i]) //n[i] is the current element
+    .transition('changeSliceFill').duration(300)
+      .attr('fill', '#fff');
+}
+
+const handleMouseOut = (d, i, n) => {
+  d3.select(n[i]) //n[i] is the current element
+    .transition('changeSliceFill').duration(300)
+      .attr('fill', colour(d.data.name));
+}
+
+const hanldeClick = (d) => {
+  //console.log(d);
+  const id = d.data.id
+  db.collection('expenses').doc(id).delete()
 }
